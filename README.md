@@ -1,6 +1,6 @@
 # Automatic Plant Watering System
 
-## Project Description for Integrated Systems Course
+## Project Description for TTK8
 
 ### Project Overview
 
