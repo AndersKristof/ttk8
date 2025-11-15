@@ -11,17 +11,20 @@
 
 void relay_init()
 {
-	PORTE_DIRSET = (PIN0_bm | PIN1_bm | PIN2_bm);
-	PORTE_OUTSET = PIN2_bm;
-	PORTE_OUTCLR = (PIN1_bm | PIN0_bm);
+	PORTD_DIRSET = PIN7_bm;
 }
 
 void relay_off()
 {
-	PORTE_OUTCLR = PIN0_bm;
+	PORTD_OUTCLR = PIN7_bm;
 }
 
 void relay_on()
 {
-	PORTE_OUTSET = PIN0_bm;
+	PORTD_OUTSET = PIN7_bm;
+}
+
+void relay_toggle()
+{
+	PORTD_OUTTGL = PIN7_bm;
 }
