@@ -20,9 +20,9 @@ The primary goal is to create a smart irrigation system that:
 
 **Hardware:**
 
-- Microcontroller (e.g., Arduino, ESP32, or similar)
-- Soil moisture sensor(s)
-- Water pump or solenoid valve
+- Microcontroller (AtMega4809)
+- Soil moisture sensor
+- Water pump (WHADDA Water Pump)
 - Water reservoir and tubing system
 - Power supply system
 - Optional: LCD display for status monitoring
@@ -31,8 +31,7 @@ The primary goal is to create a smart irrigation system that:
 
 - Sensor data acquisition and processing
 - Control algorithms for watering decisions
-- User interface for configuration and monitoring
-- Data logging capabilities
+- UART Testing interface
 
 ### Learning Objectives
 
@@ -69,11 +68,3 @@ The project will be considered successful when:
 3. The system prevents overwatering through intelligent control
 4. All components operate reliably over extended periods
 5. The system demonstrates clear learning outcomes in sensor integration and embedded control
-
-### Timeline
-
-- **Week 1-2**: Research and component selection
-- **Week 3-5**: Basic hardware setup and sensor testing
-- **Week 6-8**: Software development and control algorithm implementation
-- **Week 9-11**: System integration and testing
-- **Week 12-13**: Documentation, and presentation preparation

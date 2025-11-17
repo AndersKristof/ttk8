@@ -1,0 +1,257 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{amsmath}
+\usepackage{textcomp}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{fancyvrb}
+\usepackage{graphicx}
+\geometry{margin=2.5cm}
+
+\hypersetup{
+	colorlinks=true,
+	linkcolor=blue,
+	urlcolor=blue,
+	citecolor=blue
+}
+
+% Listings configuration for C code excerpts
+\lstdefinestyle{cstyle}{
+	language=C,
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue},
+	commentstyle=\color{gray},
+	stringstyle=\color{orange},
+	numberstyle=\tiny\color{gray},
+	numbers=left,
+	stepnumber=1,
+	showstringspaces=false,
+	breaklines=true,
+	frame=single,
+	tabsize=2
+}
+\lstset{style=cstyle}
+
+\setlist[itemize]{topsep=2pt,parsep=2pt,partopsep=0pt,leftmargin=1.2em}
+\setlist[enumerate]{topsep=2pt,parsep=2pt,partopsep=0pt,leftmargin=1.4em}
+
+\title{TTK8 Project: Automatic Watering System}
+\author{Anders Kristoffersen}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\newpage
+
+\tableofcontents
+
+\section{List of Abbreviations}
+\begin{itemize}
+	\item \textbf{ADC}: Analog-to-Digital Converter
+	\item \textbf{MCU}: Microcontroller Unit
+	\item \textbf{GPIO}: General Purpose Input/Output
+	\item \textbf{UART}: Universal Asynchronous Receiver/Transmitter
+    \item \textbf{PSU}: Power Supply Unit
+    \item \textbf{GND}: Ground
+    \item \textbf{VCC}: Supply Voltage
+    \item \textbf{RTC}: Real Time Counter
+    \item \textbf{PIT}: Periodic Interrupt Timer
+    \item \textbf{LCD}: Liquid Crystal Display
+\end{itemize}
+
+\section{Introduction}
+This document describes the automatic watering system developed in this course. It explains the system from top level design down to implementation details in the firmware, lists the functional specification and acceptance criteria, documents the design (hardware and firmware), and outlines the testing approach and results. The firmware runs on a \textbf{ATmega4809} MCU and controls a \textbf{WHADDA Water Pump} via a relay driver. UART communication is present strictly for test/debug interaction (manual relay control and moisture reads) and is not used during normal autonomous operation. Firmware is reflected  through selected code excerpts, but complete code can be found at \hyperlink{github-link}{https://github.com/AndersKristof/ttk8}.
+
+\subsection*{Figures}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figures/setup.jpg}
+    \caption{System setup.}
+    \label{fig:setup}
+\end{figure}
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=1\linewidth]{figures/schematic.png}
+	\caption{Electrical connections schematic.}
+	\label{fig:electrical}
+\end{figure}
+
+\section{Specification (Demands and Acceptance Criteria)}
+\subsection*{Purpose}
+Automatically water plants by measuring soil moisture and energizing the pump (via relay) for a fixed duration when moisture falls below a configured percentage threshold.
+
+\subsection*{Acceptance Criteria}
+\begin{itemize}
+	\item In autonomous mode (\texttt{TEST\_MODE\_ACTIVE == 0}), sample moisture once per \texttt{SAMPLE\_INTERVAL\_MS} and water for \texttt{WATER\_DURATION\_MS} if below threshold.
+	\item In test mode (\texttt{TEST\_MODE\_ACTIVE == 1}), UART commands operate the system without unintended relay activation.
+	\item Relay remains OFF at power-up until a valid watering condition or explicit test command.
+	\item Moisture percent computation is monotonic with sensor changes.
+\end{itemize}
+
+\subsection*{Current Implemented Demands}
+\begin{itemize}
+	\item Read soil moisture via 8-bit ADC and convert raw value to a percentage.
+	\item Drive relay controlling the WHADDA Water Pump for \texttt{WATER\_DURATION\_MS} when moisture level is below \texttt{MOISTURE\_THRESHOLD\_PERCENT}.
+	\item Provide a UART test interface with commands for reading out current moisture level ('c'), toggling the relay controlling the pump ('t'), and activating the pump for the specified watering interval ('r').
+	\item Relay defaults to OFF on startup and after watering delay.
+\end{itemize}
+
+\section{Design of Automatic Watering System}
+\subsection{System Architecture (Top-Down)}
+\begin{itemize}
+	\item \textbf{Sensor Layer}: Soil moisture probe powered by dedicated GPIO pins (PE0 and PE1) with analog output routed to internal ADC0 (AIN0 = PD0).
+	\item \textbf{Control Layer}: ATmega4809 executes threshold-based loop; converts raw ADC value to percent, compares with \texttt{MOISTURE\_THRESHOLD\_PERCENT}.
+	\item \textbf{Actuation Layer}: Relay connected to PD7 drives the WHADDA Water Pump which has its own 12V PSU.
+	\item \textbf{Monitoring \& Test Interface}: UART (USART3) enabled only when \texttt{TEST\_MODE\_ACTIVE==1}.
+\end{itemize}
+
+\subsection{Electrical Connections}
+\begin{itemize}
+	\item PD0 (AIN0) $\rightarrow$ Sensor analog input
+	\item PE0 / PE1 $\rightarrow$ Sensor power output
+    \item PD7 $\rightarrow$ Relay driver output
+	\item PB0 (TX), PB1 (RX) $\rightarrow$ UART test interface (test mode only)
+	\item Shared 5V VCC and GND between MCU, relay controls and moisture sensor
+    \item Own VCC and GND for Water Pump from 12V PSU
+\end{itemize}
+
+\subsection{Code Excerpts}
+Complete firmware code can be found at the project repository; \hyperlink{github-link}{https://github.com/AndersKristof/ttk8}.
+
+\paragraph{Main Autonomous Loop}
+\begin{lstlisting}
+while (1) {
+		moisture_level_in_percent = 100 * abs(adc_get_result() - 255) / 255;
+		if (moisture_level_in_percent < MOISTURE_THRESHOLD_PERCENT && !TEST_MODE_ACTIVE) {
+				relay_on();
+				_delay_ms(WATER_DURATION_MS);
+				relay_off();
+		}
+		_delay_ms(SAMPLE_INTERVAL_MS);
+}
+\end{lstlisting}
+
+\paragraph{UART Command ISR (Test Mode Only)}
+\begin{lstlisting}
+ISR(USART3_RXC_vect) {
+		uint8_t byte = uart_receive_byte();
+		if (byte == 't') { relay_toggle(); }
+		else if (byte == 'r') { relay_on(); _delay_ms(WATER_DURATION_MS); relay_off(); }
+		else if (byte == 'c') {
+				moisture_level_in_percent = 100 * abs(adc_get_result() - 255) / 255;
+				// print moisture
+		}
+		// unknown commands are reported back in test mode
+}
+\end{lstlisting}
+
+\paragraph{Relay Control}
+\begin{lstlisting}
+void relay_init() { PORTD_DIRSET = PIN7_bm; PORTD_OUTCLR = PIN7_bm; }
+void relay_on()   { PORTD_OUTSET = PIN7_bm; }
+void relay_off()  { PORTD_OUTCLR = PIN7_bm; }
+void relay_toggle()  { PORTD_OUTTGL = PIN7_bm; }
+\end{lstlisting}
+
+\paragraph{ADC Sampling}
+\begin{lstlisting}
+uint8_t adc_get_result() {
+		ADC0_COMMAND = ADC_STCONV_bm;
+		while (!(ADC0_INTFLAGS & ADC_RESRDY_bm));
+		return ADC0_RES; // 8-bit value
+}
+\end{lstlisting}
+
+\paragraph{Moisture Sensor Power Setup}
+\begin{lstlisting}
+void moisture_sensor_init() {
+		PORTE_DIRSET = (PIN0_bm | PIN1_bm);
+		PORTE_OUTSET = PIN1_bm; // V+
+		PORTE_OUTCLR = PIN0_bm; // GND/ref
+}
+\end{lstlisting}
+
+\section{Implementation Details}
+\subsection{Source Files and Responsibilities}
+\begin{itemize}
+	\item \texttt{main.c}: Entry point; initializes modules and runs threshold loop; enables UART and interrupts only in test mode.
+	\item \texttt{config.h}: Central configuration macros (threshold, durations, interval, test flag, UART baud calc).
+	\item \texttt{moisture\_sensor.c/.h}: GPIO setup to power sensor.
+	\item \texttt{adc.c/.h}: ADC0 init and blocking conversion; percent computed externally.
+	\item \texttt{relay.c/.h}: PD7 relay driver (init/on/off/toggle).
+	\item \texttt{uart.c/.h}: USART3 driver for test mode commands and output.
+	\item \texttt{clkctrl.c/.h}: Clock source configuration (20 MHz internal oscillator with prescaler, running at 2 MHz).
+\end{itemize}
+
+\subsection{Threshold Watering Logic}
+Single moisture percent threshold (\texttt{MOISTURE\_THRESHOLD\_PERCENT}). Below threshold: relay ON for \texttt{WATER\_DURATION\_MS} then OFF; loop sleeps via blocking delay.
+
+\subsection{UART Test Interface (Test-Only)}
+Active only when \texttt{TEST\_MODE\_ACTIVE==1}:
+\begin{itemize}
+	\item \texttt{t}: Toggle relay
+	\item \texttt{r}: One watering sequence
+	\item \texttt{c}: Read and print moisture percent
+	\item Unknown: Error message
+\end{itemize}
+Autonomous mode omits UART to reduce power and noise.
+
+\subsection{Key Algorithms and Flow}
+\begin{itemize}
+	\item \textbf{Sampling}: Single 8-bit ADC conversion per loop.
+	\item \textbf{Percent Conversion}: \texttt{percent = 100 * abs(adc - 255) / 255} (inverted scale assumption).
+	\item \textbf{Watering}: Fixed ON duration.
+	\item \textbf{Safety}: Relay OFF in \texttt{relay\_init()}.
+\end{itemize}
+
+\section{Testing of Automatic Watering System}
+\subsection{Test Plan and Acceptance Tests}
+\begin{itemize}
+    \item UART commands: In test mode, verify \texttt{t}, \texttt{r}, \texttt{c} behaviors.
+	\item Sensor check: Check sensor output for different moisture-levels; find appropriate threshold level, \texttt{MOISTURE\_THRESHOLD\_PERCENT}.
+	\item Flow rate: Measure volume amount of water per second of ON time for appropriate \texttt{WATER\_DURATION\_MS} value.
+    \item Relay safety: Power cycle; relay remains OFF until condition/command.
+    \item Threshold activation: Force dry condition; confirm relay activation and ON duration matches \texttt{WATER\_DURATION\_MS}.
+\end{itemize}
+
+\subsection{Manual Test Procedure}
+\begin{enumerate}
+	\item Set \texttt{TEST\_MODE\_ACTIVE=1}; build/flash.
+	\item Connect serial terminal at configured baud.
+	\item Issue \texttt{c} while varying moisture; record readings.
+	\item Issue \texttt{r}; measure ON duration. Measure water volume pumped to choose appropriate ON time.
+	\item Issue \texttt{t} several times; confirm stable toggling.
+	\item Set \texttt{TEST\_MODE\_ACTIVE=0}; reflash; simulate dry conditionby pulling sensor out in the air and observe autonomous watering.
+\end{enumerate}
+
+\subsection{Test Results}
+\begin{itemize}
+    \item UART commands: Commands behave as expected. 
+	\item Sensor check: Observe low (0-2\%) output when sensor is out of soil, high (\~97\%) when sensor poles are directly connected, and medium (5-60\%) when sensor is placed in soil. Soil appears ready for watering at around 15\% sensor output, choose this as \texttt{MOISTURE\_THRESHOLD\_PERCENT}.
+	\item Flow rate: Measured \~0.2L of water per 1 seconds of ON time. 0.1L of water is an appropriate amount for each activation so choose \texttt{WATER\_DURATION\_MS} to be 500.
+    \item Relay safety: Relay is not activated during power cycle.
+    \item Threshold activation: As expected. Watering is activated every \texttt{SAMPLE\_INTERVAL\_MS} (60s) when sensor is detecting dry conditions.
+\end{itemize}
+
+\section{Conclusion \& Future Work}
+Current system delivers a threshold-based watering cycle with modular firmware structure (\texttt{main}, \texttt{config}, \texttt{moisture\_sensor}, \texttt{adc}, \texttt{relay}, \texttt{uart}, \texttt{clkctrl}).
+
+\subsection*{Planned Enhancements}
+\begin{itemize}
+	\item Running in low-power mode using the sleep controller peripheral with RTC/PIT-based wake-up replacing blocking delays.
+	\item Runtime UART configuration commands (threshold/duration adjustments).
+	\item LCD screen for live moisture-level tracking.
+    \item Purpose-built electronics container.
+    \item Purpose-built water container.
+    \item Complete powering of the system from wall-mounted PSU, with MCU, relay and sensor powered through a voltage regulator.
+\end{itemize}
+
+\end{document}
