@@ -1,9 +1,9 @@
 /*
  * relay.h
  *
- * Created: 14.11.2025 15:06:58
- *  Author: ankristo
- */ 
+ * Public relay control API. Provides initialization and simple on/off
+ * control functions used by the application to drive the external relay.
+ */
 
 
 #ifndef RELAY_H_

@@ -148,7 +148,16 @@
     <Compile Include="clkctrl.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="config.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="main.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="moisture_sensor.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="moisture_sensor.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="relay.c">

@@ -1,9 +1,9 @@
 /*
  * uart.h
  *
- * Created: 14.11.2025 12:21:08
- *  Author: ankristo
- */ 
+ * Simple UART transmit/receive API for logging and basic command I/O.
+ * The implementation exposes initialization and byte/string helpers.
+ */
 
 
 #ifndef UART_H_

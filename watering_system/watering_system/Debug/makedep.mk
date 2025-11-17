@@ -8,6 +8,8 @@ clkctrl.c
 
 main.c
 
+moisture_sensor.c
+
 relay.c
 
 uart.c

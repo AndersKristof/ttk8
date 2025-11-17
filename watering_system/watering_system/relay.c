@@ -1,9 +1,10 @@
 /*
  * relay.c
  *
- * Created: 14.11.2025 15:07:29
- *  Author: ankristo
- */ 
+ * Relay driver implementation. Controls a single relay GPIO (PD7) used to
+ * switch the pump/solenoid through a driver transistor. Provides safe
+ * default (GPIO configured) and basic on/off/toggle functions.
+ */
 
 #include <avr/io.h>
 
@@ -12,6 +13,7 @@
 void relay_init()
 {
 	PORTD_DIRSET = PIN7_bm;
+	PORTD_OUTCLR = PIN7_bm;
 }
 
 void relay_off()

@@ -40,6 +40,7 @@ C_SRCS +=  \
 ../adc.c \
 ../clkctrl.c \
 ../main.c \
+../moisture_sensor.c \
 ../relay.c \
 ../uart.c
 
@@ -54,6 +55,7 @@ OBJS +=  \
 adc.o \
 clkctrl.o \
 main.o \
+moisture_sensor.o \
 relay.o \
 uart.o
 
@@ -61,6 +63,7 @@ OBJS_AS_ARGS +=  \
 adc.o \
 clkctrl.o \
 main.o \
+moisture_sensor.o \
 relay.o \
 uart.o
 
@@ -68,6 +71,7 @@ C_DEPS +=  \
 adc.d \
 clkctrl.d \
 main.d \
+moisture_sensor.d \
 relay.d \
 uart.d
 
@@ -75,6 +79,7 @@ C_DEPS_AS_ARGS +=  \
 adc.d \
 clkctrl.d \
 main.d \
+moisture_sensor.d \
 relay.d \
 uart.d
 
@@ -107,6 +112,13 @@ LINKER_SCRIPT_DEP+=
 	
 
 ./main.o: .././main.c
+	@echo Building file: $<
+	@echo Invoking: AVR/GNU C Compiler : 5.4.0
+	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avr8-gnu-toolchain\bin\avr-gcc.exe$(QUOTE)  -x c -funsigned-char -funsigned-bitfields -DDEBUG  -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\include"  -Og -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -g2 -Wall -mmcu=atmega4809 -B "C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\gcc\dev\atmega4809" -c -std=gnu99 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
+	@echo Finished building: $<
+	
+
+./moisture_sensor.o: .././moisture_sensor.c
 	@echo Building file: $<
 	@echo Invoking: AVR/GNU C Compiler : 5.4.0
 	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avr8-gnu-toolchain\bin\avr-gcc.exe$(QUOTE)  -x c -funsigned-char -funsigned-bitfields -DDEBUG  -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\include"  -Og -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -g2 -Wall -mmcu=atmega4809 -B "C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\gcc\dev\atmega4809" -c -std=gnu99 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 

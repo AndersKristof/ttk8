@@ -1,9 +1,10 @@
 /*
  * adc.c
  *
- * Created: 14.11.2025 13:31:35
- *  Author: ankristo
- */ 
+ * ADC driver implementation for the watering system.
+ * Configures ADC0 for 8-bit results and provides a blocking conversion
+ * with result-ready wait. The public API is declared in `adc.h`.
+ */
 
 #include <avr/io.h>
 

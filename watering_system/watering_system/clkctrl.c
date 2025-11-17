@@ -1,9 +1,10 @@
 /*
  * clkctrl.c
  *
- * Created: 14.11.2025 12:15:13
- *  Author: ankristo
- */ 
+ * MCU clock configuration for the watering system.
+ * Sets the main clock source and prescalers appropriate for low-power
+ * sampling and peripheral usage.
+ */
 
 #include <avr/io.h>
 

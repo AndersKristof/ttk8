@@ -1,9 +1,10 @@
 /*
  * uart.c
  *
- * Created: 14.11.2325 12:22:25
- *  Author: ankristo
- */ 
+ * UART driver implementation used for runtime logging and simple
+ * interactive commands. Uses USART3 for TX/RX and exposes simple
+ * helper functions declared in `uart.h`.
+ */
 
 #include <avr/io.h>
 #include <string.h>

@@ -1,9 +1,9 @@
 /*
  * clkctrl.h
  *
- * Created: 14.11.2025 12:14:47
- *  Author: ankristo
- */ 
+ * Clock control public interface. Provides a simple init function to set
+ * the MCU main clock configuration used by the application.
+ */
 
 
 #ifndef CLKCTRL_H_

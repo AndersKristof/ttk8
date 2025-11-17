@@ -1,9 +1,10 @@
 /*
- * watering_system.c
+ * main.c
  *
- * Created: 14.11.2025 12:08:43
- * Author : ankristo
- */ 
+ * Application entry for the automatic watering controller. Initializes
+ * hardware modules (clock, UART, ADC, relay, sleep control) and runs
+ * the main sampling loop that logs ADC values and triggers watering.
+ */
 
 #define F_CPU 2000000
 
@@ -18,51 +19,73 @@
 #include "uart.h"
 #include "adc.h"
 #include "relay.h"
+#include "config.h"
+#include "moisture_sensor.h"
 
-uint16_t baud = 833;
+uint8_t moisture_level_in_percent;
 
 ISR(USART3_RXC_vect)
 {
-	relay_toggle();
 	uint8_t byte_received = uart_receive_byte();
-	uart_send_string("Received UART signal: ");
-	uart_send_byte(byte_received);
-	uart_send_string("\n\r");
+	
+	if (byte_received == 't')
+	{
+		uart_send_string("Received UART signal: 't'\n\rToggling relay.\n\r");
+		relay_toggle();
+	} 
+	else if (byte_received == 'r')
+	{
+		uart_send_string("Received UART signal: 'r'\n\rRunning one watering sequence.\n\r");
+		relay_on();
+		_delay_ms(WATER_DURATION_MS);
+		relay_off();
+	}
+	else if (byte_received == 'c')
+	{
+		uart_send_string("Received UART signal: 'c'\n\rChecking current moisture level.\n\r");
+		
+		moisture_level_in_percent = 100*abs(adc_get_result() - 255)/255;
+		uart_send_string("Current Moisture: ");
+		uart_send_number(moisture_level_in_percent);
+		uart_send_string("\n\r");
+	}
+	else {
+		uart_send_string("Received UART signal: ");
+		uart_send_byte(byte_received);
+		uart_send_string("\n\rUnknown Command.\n\r");
+	}
 }
 
 int main(void)
 {
 	clkctrl_init();
-	uart_init(baud);
+	moisture_sensor_init();
 	adc_init();
 	relay_init();
-		
-	sei();
 	
-	// Set up power pins for moisture sensor
-	PORTE_DIRSET = (PIN0_bm | PIN1_bm);
-	PORTE_OUTSET = PIN1_bm;
-	PORTE_OUTCLR = PIN0_bm;
-		   
-	int i = 0;
-	uint8_t adc_result;
-	int8_t moisture_result_in_percent;
-	   
-    while (1) 
-    {
-		uart_send_number(i);
-		i++;
-		uart_send_string(". result: ");
+	if (TEST_MODE_ACTIVE)
+	{
+		uart_init(UART_BAUD_REGISTER_VALUE);
+		sei();
 		
-		
-		adc_result = adc_get_result();
-		moisture_result_in_percent = abs((100*adc_result/255)-100);
-		uart_send_number(moisture_result_in_percent);
-		
-		uart_send_string("%\n\r");
-		
-		_delay_ms(500);
-		
-    }
+		while (1);
+	}
+	else
+	{
+		while (1)
+		{
+			moisture_level_in_percent = 100*abs(adc_get_result() - 255)/255;
+			
+			if ((moisture_level_in_percent < MOISTURE_THRESHOLD_PERCENT) && !TEST_MODE_ACTIVE)
+			{
+				relay_on();
+				_delay_ms(WATER_DURATION_MS);
+				relay_off();
+			}
+			
+			_delay_ms(SAMPLE_INTERVAL_MS);
+			
+		}
+	}
 }
 
