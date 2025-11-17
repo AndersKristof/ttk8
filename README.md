@@ -4,7 +4,7 @@
 
 ### Project Overview
 
-This project involves designing and implementing an automatic plant watering system that monitors soil moisture levels and waters plants autonomously when the soil becomes too dry. The system will use embedded sensors to continuously monitor conditions and actuate a watering mechanism when appropriate.
+This project involves designing and implementing an automatic plant watering system that monitors soil moisture levels and waters plants autonomously when the soil becomes too dry. The system will use embedded sensors to continuously monitor conditions and actuate a watering mechanism when appropriate. Firmware can be found under /watering_system.
 
 ### Project Objectives
 
